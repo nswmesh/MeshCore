@@ -46,16 +46,17 @@ jobs:
           echo "branch=$BRANCH_NAME" >> $GITHUB_OUTPUT
 
       - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v5
-        with:
-          token: ${{ secrets.SYNC_TOKEN }}
-          branch: ${{ steps.sync.outputs.branch }}
-          delete-branch: true
-          title: '[Automated] Sync with upstream repository'
-          body: |
-            This PR syncs the fork with upstream changes from meshcore-dev/MeshCore.
-            
-            Please review and merge if everything looks good.
-            
-            Automated sync run: ${{ github.run_number }}
-          labels: automated, sync
+        env:
+          GH_TOKEN: ${{ secrets.SYNC_TOKEN }}
+        run: |
+          gh pr create \
+            --repo nswmesh/MeshCore \
+            --base main \
+            --head ${{ steps.sync.outputs.branch }} \
+            --title "[Automated] Sync with upstream repository" \
+            --body "This PR syncs the fork with upstream changes from meshcore-dev/MeshCore.
+
+          Please review and merge if everything looks good.
+          
+          Automated sync run: ${{ github.run_number }}" \
+            --label automated,sync || echo "PR may already exist"
