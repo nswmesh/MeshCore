@@ -8,6 +8,7 @@ on:
 
 permissions:
   contents: write
+  pull-requests: write
 
 jobs:
   sync:
@@ -16,7 +17,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          token: ${{ secrets.SYNC_TOKEN }}  # Use PAT instead of GITHUB_TOKEN
+          token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0  # Fetch all history for all branches and tags
 
       - name: Sync with Upstream
@@ -47,7 +48,7 @@ jobs:
 
       - name: Create Pull Request
         env:
-          GH_TOKEN: ${{ secrets.SYNC_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh pr create \
             --repo nswmesh/MeshCore \
