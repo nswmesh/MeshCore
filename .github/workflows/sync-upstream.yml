@@ -1,0 +1,51 @@
+name: Sync Fork with Upstream
+
+on:
+  schedule:
+    # Run every Sunday
+    - cron: '0 2 * * 6'
+  workflow_dispatch:  # Allow manual trigger of action
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch all history for all branches and tags
+
+      - name: Sync with Upstream
+        run: |
+          # Configure git
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Add upstream remote
+          git remote add upstream https://github.com/meshcore-dev/MeshCore
+          
+          # Fetch upstream
+          git fetch upstream
+          
+          # Merge upstream/main into main
+          git checkout main
+          git merge upstream/main --no-edit
+          
+          # Push changes
+          git push origin main
+
+      - name: Create Pull Request on Conflicts
+        if: failure()
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: Sync with upstream
+          title: '[Automated] Sync with upstream repository'
+          body: |
+            This PR was automatically created to sync with the upstream repository.
+            There were conflicts that need to be resolved manually.
+          branch: sync-upstream
+          delete-branch: true
