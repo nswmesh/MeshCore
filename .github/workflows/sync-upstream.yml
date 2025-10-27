@@ -2,7 +2,7 @@ name: Sync Fork with Upstream
 
 on:
   schedule:
-    # Run every Sunday`
+    # Run every Sunday
     - cron: '0 2 * * 6'
   workflow_dispatch:  # Allow manual trigger of action
 
@@ -13,10 +13,15 @@ permissions:
 jobs:
   sync:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        branch: [main, dev]
+      fail-fast: false  # Continue with other branches even if one fails
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
+          ref: ${{ matrix.branch }}
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0  # Fetch all history for all branches and tags
 
@@ -34,11 +39,11 @@ jobs:
           git fetch upstream
           
           # Create a new branch for the sync
-          BRANCH_NAME="sync-upstream-$(date +%Y%m%d-%H%M%S)"
+          BRANCH_NAME="sync-upstream-${{ matrix.branch }}-$(date +%Y%m%d-%H%M%S)"
           git checkout -b "$BRANCH_NAME"
           
-          # Merge upstream/main
-          git merge upstream/main --no-edit
+          # Merge upstream branch
+          git merge upstream/${{ matrix.branch }} --no-edit
           
           # Push the branch
           git push origin "$BRANCH_NAME"
@@ -52,10 +57,10 @@ jobs:
         run: |
           gh pr create \
             --repo nswmesh/MeshCore \
-            --base main \
+            --base ${{ matrix.branch }} \
             --head ${{ steps.sync.outputs.branch }} \
-            --title "[Automated] Sync with upstream repository" \
-            --body "This PR syncs the fork with upstream changes from meshcore-dev/MeshCore.
+            --title "[Automated] Sync ${{ matrix.branch }} with upstream" \
+            --body "This PR syncs the fork's \`${{ matrix.branch }}\` branch with upstream changes from meshcore-dev/MeshCore.
 
           Please review and merge if everything looks good.
           
